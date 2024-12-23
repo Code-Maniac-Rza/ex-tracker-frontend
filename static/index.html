@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="xterm.css" />
+    <script src="xterm.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        #terminal {
+            height: 400px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="terminal"></div>
+
+    <script>
+        // Get backend URL from environment variable or default to localhost
+        const BACKEND_URL = window.location.hostname === 'localhost'
+            ? 'http://localhost:5000'
+            : 'https://ex-tracker-backend.onrender.com'; // Replace with your actual backend URL
+
+        const socket = io(BACKEND_URL);
+        const term = new Terminal();
+        term.open(document.getElementById('terminal'));
+
+        socket.on('connect', () => {
+            socket.emit('connection_establish', {});
+        });
+
+        socket.on('console_output', (data) => {
+            term.write(data);
+        });
+
+        // Handle terminal input
+        term.onData(e => {
+            if (e === '\r') { // Enter key
+                const command = term.buffer.active.getLine(term.buffer.active.cursorY).translateToString();
+                socket.emit('command_entered', command.trim());
+                term.write('\n');
+            } else {
+                term.write(e);
+            }
+        });
+    </script>
+</body>
+
+</html>
